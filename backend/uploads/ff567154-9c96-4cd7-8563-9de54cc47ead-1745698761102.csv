@@ -1,0 +1,119 @@
+Date,Category,Amount,Currency,Type
+2023-04-01,Base Salary,95052.4,INR,Credit
+2023-04-01,Rental Income,74546.4,INR,Credit
+2023-04-01,Freelance and Consulting,87471.43,INR,Credit
+2023-05-01,Base Salary,67081.55,INR,Credit
+2023-05-01,Rental Income,85499.52,INR,Credit
+2023-05-01,Freelance and Consulting,69258.88,INR,Credit
+2023-05-31,Base Salary,59944.12,INR,Credit
+2023-05-31,Rental Income,54585.55,INR,Credit
+2023-05-31,Freelance and Consulting,63997.06,INR,Credit
+2023-06-30,Base Salary,81150.55,INR,Credit
+2023-06-30,Rental Income,93425.63,INR,Credit
+2023-06-30,Freelance and Consulting,77478.07,INR,Credit
+2023-07-30,Base Salary,69351.45,INR,Credit
+2023-07-30,Rental Income,72049.92,INR,Credit
+2023-07-30,Freelance and Consulting,67426.29,INR,Credit
+2023-08-29,Base Salary,84728.56,INR,Credit
+2023-08-29,Rental Income,99631.85,INR,Credit
+2023-08-29,Freelance and Consulting,99041.94,INR,Credit
+2023-09-28,Base Salary,98282.13,INR,Credit
+2023-09-28,Rental Income,79472.65,INR,Credit
+2023-09-28,Freelance and Consulting,95589.47,INR,Credit
+2023-10-28,Base Salary,88815.0,INR,Credit
+2023-10-28,Rental Income,93170.8,INR,Credit
+2023-10-28,Freelance and Consulting,69260.55,INR,Credit
+2023-11-27,Base Salary,59270.12,INR,Credit
+2023-11-27,Rental Income,74087.34,INR,Credit
+2023-11-27,Freelance and Consulting,52647.04,INR,Credit
+2023-12-27,Base Salary,59237.18,INR,Credit
+2023-12-27,Rental Income,89180.96,INR,Credit
+2023-12-27,Freelance and Consulting,91740.6,INR,Credit
+2024-01-26,Base Salary,78818.36,INR,Credit
+2024-01-26,Rental Income,83063.61,INR,Credit
+2024-01-26,Freelance and Consulting,66511.09,INR,Credit
+2024-02-25,Base Salary,65043.17,INR,Credit
+2024-02-25,Rental Income,56676.87,INR,Credit
+2024-02-25,Freelance and Consulting,92410.54,INR,Credit
+2024-03-26,Base Salary,70114.75,INR,Credit
+2024-03-26,Rental Income,86749.43,INR,Credit
+2024-03-26,Freelance and Consulting,62545.08,INR,Credit
+2023-04-01,Rent and Mortgage,18036.57,INR,Debit
+2023-04-01,Groceries and Food,38574.31,INR,Debit
+2023-04-01,Electricity,18804.97,INR,Debit
+2023-04-01,Gas,37580.83,INR,Debit
+2023-05-01,Rent and Mortgage,49178.7,INR,Debit
+2023-05-01,Groceries and Food,22880.48,INR,Debit
+2023-05-01,Electricity,29853.28,INR,Debit
+2023-05-01,Gas,30988.06,INR,Debit
+2023-05-31,Rent and Mortgage,13042.14,INR,Debit
+2023-05-31,Groceries and Food,32940.79,INR,Debit
+2023-05-31,Electricity,39168.2,INR,Debit
+2023-05-31,Gas,28630.1,INR,Debit
+2023-06-30,Rent and Mortgage,34224.69,INR,Debit
+2023-06-30,Groceries and Food,26298.58,INR,Debit
+2023-06-30,Electricity,10745.58,INR,Debit
+2023-06-30,Gas,8468.58,INR,Debit
+2023-07-30,Rent and Mortgage,35400.54,INR,Debit
+2023-07-30,Groceries and Food,38161.06,INR,Debit
+2023-07-30,Electricity,43204.0,INR,Debit
+2023-07-30,Gas,27285.24,INR,Debit
+2023-08-29,Rent and Mortgage,48207.95,INR,Debit
+2023-08-29,Groceries and Food,34610.41,INR,Debit
+2023-08-29,Electricity,41689.35,INR,Debit
+2023-08-29,Gas,24365.86,INR,Debit
+2023-09-28,Rent and Mortgage,6749.54,INR,Debit
+2023-09-28,Groceries and Food,33602.91,INR,Debit
+2023-09-28,Electricity,37044.16,INR,Debit
+2023-09-28,Gas,34980.29,INR,Debit
+2023-10-28,Rent and Mortgage,46861.76,INR,Debit
+2023-10-28,Groceries and Food,24651.83,INR,Debit
+2023-10-28,Electricity,33440.87,INR,Debit
+2023-10-28,Gas,13873.31,INR,Debit
+2023-11-27,Rent and Mortgage,35136.46,INR,Debit
+2023-11-27,Groceries and Food,39032.01,INR,Debit
+2023-11-27,Electricity,21871.59,INR,Debit
+2023-11-27,Gas,47371.48,INR,Debit
+2023-12-27,Rent and Mortgage,18179.6,INR,Debit
+2023-12-27,Groceries and Food,45443.96,INR,Debit
+2023-12-27,Electricity,12496.85,INR,Debit
+2023-12-27,Gas,39181.78,INR,Debit
+2024-01-26,Rent and Mortgage,27216.23,INR,Debit
+2024-01-26,Groceries and Food,15928.12,INR,Debit
+2024-01-26,Electricity,15362.89,INR,Debit
+2024-01-26,Gas,5613.83,INR,Debit
+2024-02-25,Rent and Mortgage,24733.69,INR,Debit
+2024-02-25,Groceries and Food,46240.45,INR,Debit
+2024-02-25,Electricity,20358.34,INR,Debit
+2024-02-25,Gas,13120.0,INR,Debit
+2024-03-26,Rent and Mortgage,33024.26,INR,Debit
+2024-03-26,Groceries and Food,10807.44,INR,Debit
+2024-03-26,Electricity,23649.19,INR,Debit
+2024-03-26,Gas,48365.04,INR,Debit
+2023-04-01,Equity Compensation,34332.24,INR,Credit
+2023-04-01,Dividends,18218.78,INR,Credit
+2023-04-01,Royalties and Licenses,36442.34,INR,Credit
+2023-06-30,Equity Compensation,39680.87,INR,Credit
+2023-06-30,Dividends,31579.91,INR,Credit
+2023-06-30,Royalties and Licenses,11300.31,INR,Credit
+2023-09-28,Equity Compensation,13122.14,INR,Credit
+2023-09-28,Dividends,39864.24,INR,Credit
+2023-09-28,Royalties and Licenses,25661.15,INR,Credit
+2023-12-27,Equity Compensation,41968.2,INR,Credit
+2023-12-27,Dividends,10771.28,INR,Credit
+2023-12-27,Royalties and Licenses,21760.55,INR,Credit
+2024-03-26,Equity Compensation,28128.97,INR,Credit
+2024-03-26,Dividends,30423.81,INR,Credit
+2024-03-26,Royalties and Licenses,18385.04,INR,Credit
+2023-04-01,Property Tax,65155.37,INR,Credit
+2023-04-01,Health Insurance,133691.67,INR,Debit
+2023-04-01,Life and Term Insurance,53629.85,INR,Debit
+2023-04-01,Vacation,120154.23,INR,Credit
+2023-04-01,Gifting,108373.07,INR,Credit
+2023-04-01,Festivals,99092.69,INR,Credit
+2024-03-31,Property Tax,131075.13,INR,Credit
+2024-03-31,Health Insurance,106087.92,INR,Debit
+2024-03-31,Life and Term Insurance,93536.82,INR,Debit
+2024-03-31,Vacation,60217.52,INR,Credit
+2024-03-31,Gifting,64187.38,INR,Credit
+2024-03-31,Festivals,97844.33,INR,Credit
