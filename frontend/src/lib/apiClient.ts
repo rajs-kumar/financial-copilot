@@ -1,4 +1,4 @@
-import axios, { AxiosError, AxiosRequestConfig } from 'axios';
+import axios, { AxiosError, AxiosRequestConfig, AxiosProgressEvent } from 'axios';
 
 // API configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api";
@@ -42,7 +42,7 @@ apiClient.interceptors.response.use(
     
     // Generic error messaging
     const errorMessage = 
-      error.response?.data?.message || 
+      (error.response?.data as { message?: string })?.message || 
       error.message || 
       'An error occurred';
     
@@ -62,7 +62,7 @@ export const uploadFile = async (file: File, onProgress?: (percentage: number) =
       headers: {
         "Content-Type": "multipart/form-data",
       },
-      onUploadProgress: (progressEvent: ProgressEvent) => {
+      onUploadProgress: (progressEvent: AxiosProgressEvent) => {
         if (progressEvent.total && onProgress) {
           const percentage = Math.round((progressEvent.loaded * 100) / progressEvent.total);
           onProgress(percentage);
