@@ -1,5 +1,4 @@
-import axios from "axios";
-import { AxiosError } from "axios";
+import axios, { AxiosError, AxiosRequestConfig } from 'axios';
 
 // API configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api";
@@ -15,10 +14,11 @@ const apiClient = axios.create({
 // Request interceptor to add auth token
 apiClient.interceptors.request.use((config) => {
   // const token = localStorage.getItem("accessToken");
-  const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN;
+  const token = process
   if (token) {
-    config.headers = config.headers || {};
-    config.headers["Authorization"] = `Bearer ${token}`;
+    if (config.headers) {
+      config.headers["Authorization"] = `Bearer ${token}`;
+    }
   }
   return config;
 });
@@ -61,14 +61,14 @@ export const uploadFile = async (file: File, onProgress?: (percentage: number) =
     const response = await apiClient.post(`/data-ingestion/upload`, formData, {
       headers: {
         "Content-Type": "multipart/form-data",
-        onUploadProgress: (progressEvent: ProgressEvent) => {
-          if (progressEvent.total && onProgress) {
-            const percentage = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-            onProgress(percentage);
-          }
+      },
+      onUploadProgress: (progressEvent: ProgressEvent) => {
+        if (progressEvent.total && onProgress) {
+          const percentage = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          onProgress(percentage);
         }
-        }
-      });
+      },
+    } as AxiosRequestConfig);
 
     return response.data;
   } catch (error) {
