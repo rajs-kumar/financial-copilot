@@ -1,98 +1,99 @@
 # AI Financial Copilot
 
-An intelligent, proactive financial assistant that helps individual investors and financial advisors manage their finances effectively.
+An intelligent, AI-first financial wellness application designed to act as a proactive copilot for individuals and financial advisors.
 
-## System Architecture
+Built with a modular, scalable architecture — featuring agent-based services, AI integration, secure ingestion pipelines, and a modern frontend.
 
-The application follows a modular architecture with the following components:
+---
 
-- **API Gateway & Service Layer**: Express.js REST API with authentication, routing, and request validation
-- **Agent Orchestration Engine**: Manages AI agents for data ingestion, transaction categorization, monitoring, and copilot chat
-- **Data Storage**: PostgreSQL for structured data and vector storage capability for semantic search
-- **External Integrations**: Connectors for banking APIs, market data feeds, and investment platforms
-- **AI/ML Components**: Integration with LLM APIs for NLP capabilities and agent reasoning
+## 🚀 Project Structure
 
-## Core Features
+financial-copilot/ 
+├── backend/ # Node.js (Express + TypeScript) backend, services, agents 
+├── frontend/ # Next.js (TypeScript + TailwindCSS) frontend 
+├── docs/ # Architecture diagrams, documentation 
+├── README.md # (You are here)
 
-1. **Data Ingestion Module**: Secure file uploads (CSV, PDF) with parsing and mapping to Chart of Accounts
-2. **Transaction Categorization Agent**: Smart categorization using rules-based approach and LLM integration
-3. **Copilot Chat Interface**: Natural language queries with context-aware insights
-4. **Security & Middleware**: Request validation, authentication, and secure file handling
-5. **Messaging System**: Asynchronous processing between agents
 
-## Getting Started
+Each service (backend, frontend) is fully independent — easy to develop, deploy, and scale separately.
 
-### Prerequisites
+---
 
-- Node.js (v16+)
-- PostgreSQL
-- RabbitMQ (for messaging)
+## 🛠️ Tech Stack
 
-### Installation
+| Layer               | Technology                              |
+|:--------------------|:----------------------------------------|
+| Frontend             | Next.js, React, TypeScript, TailwindCSS |
+| Backend              | Node.js, Express, TypeScript            |
+| Database             | PostgreSQL                             |
+| Messaging Queue      | RabbitMQ                                |
+| AI Integration       | OpenAI API, LLM service abstraction     |
+| Authentication       | JWT (Role-based access control)         |
+| Storage              | Local File Storage (Uploads) + VectorDB |
+| Testing              | Jest, React Testing Library             |
+
+---
+
+## 📦 Setup Instructions
+
+### 1. Backend Setup
 
 ```bash
-# Clone the repository
-git clone https://github.com/rajs-kumar/financial-copilot.git
-cd financial-copilot
-
-# Install dependencies
-npm install
-
-# Set up environment variables
+cd backend
 cp .env.example .env
-# Edit .env with your configuration
-
-# Build the project
-npm run build
-
-# Run migrations
-npm run migrate
-
-# Start the server
-npm start
-```
-
-### Development
-
-```bash
-# Run in development mode with hot reload
+npm install
 npm run dev
-
-# Run tests
-npm test
 ```
 
-## API Documentation
+API will run at: http://localhost:5000
+Make sure PostgreSQL, RabbitMQ services are running locally.
 
-### Authentication
-
-- POST `/api/auth/register` - Register a new user
-- POST `/api/auth/login` - Login and receive JWT token
-
-### Data Ingestion
-
-- POST `/api/data/upload` - Upload financial documents (CSV, PDF)
-- GET `/api/data/files` - List uploaded files
-
-### Transactions
-
-- GET `/api/transactions` - Get all transactions
-- POST `/api/transactions/categorize` - Manually categorize a transaction
-- PUT `/api/transactions/:id` - Update transaction details
-
-### Copilot Chat
-
-- POST `/api/copilot/chat` - Send a query to the copilot
-- GET `/api/copilot/insights` - Get proactive insights
-
-## Testing
-
-The application includes unit tests and integration tests using Jest. Run tests with:
-
+### 2. Frontend Setup
 ```bash
-npm test
+cd frontend
+cp .env.local.example .env.local
+npm install
+npm run dev
 ```
 
-## License
+App will run at: http://localhost:3000
+Connects automatically to backend API via NEXT_PUBLIC_API_BASE_URL.
 
-[MIT](LICENSE)
+### 3. 🔑 Environment Variables
+Each service manages its own environment separately:
+
+
+Service	Env File
+Backend	.env
+Frontend	.env.local
+✅ Example files provided:
+
+backend/.env.example
+
+frontend/.env.local.example
+
+### 4. 📚 Key Features
+Secure File Upload (CSV, PDF ingestion)
+
+Transaction Categorization (Rules + LLM based)
+
+Copilot Conversational Interface
+
+Real-time Insights & Monitoring Agents
+
+Agent Orchestration Framework (Queue-driven)
+
+Full JWT Authentication and Role Management
+
+Clean Monorepo Structure for Backend + Frontend
+
+### 5. 📂 Documentation
+
+Document	Location
+System Architecture	/docs/Architecture.md
+Getting Started Guide	/docs/Getting-Started.md
+Data Models (Coming Soon)	/docs/Data-Models.md
+Agents Overview (Coming Soon)	/docs/Agents.md
+
+### 🛡️ License
+© 2025 Raj Kumar. All rights reserved.
