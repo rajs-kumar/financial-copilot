@@ -35,6 +35,8 @@ const Navigation: React.FC = () => {
       (!item.authRequired && (!item.hideWhenAuth || !isAuthenticated))
   );
 
+  console.log('Current pathname:', pathname);
+  
   return (
     <nav className="bg-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

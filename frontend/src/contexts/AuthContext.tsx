@@ -81,14 +81,33 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setToken(null);
   };
 
+  // Function to check if token is valid (e.g., not expired)
+  const isTokenValid = (token: string) => {
+    try {
+      // For JWT tokens, you can check expiration
+      const decoded = JSON.parse(atob(token.split('.')[1]));
+      return decoded.exp * 1000 > Date.now();
+    } catch {
+      return false;
+    }
+  };
+
   // Update axios defaults when token changes
   useEffect(() => {
-    if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    } else {
-      delete axios.defaults.headers.common['Authorization'];
+    const storedToken = localStorage.getItem('accessToken');
+    if (storedToken && isTokenValid(storedToken)) {
+      setToken(storedToken);
+    } else if (storedToken) {
+      // Token exists but is invalid
+      localStorage.removeItem('accessToken');
+      setToken(null);
+    } else if (process.env.NODE_ENV === 'development' && MOCK_TOKEN) {
+      // In development, use mock token if no stored token
+      setToken(MOCK_TOKEN);
+      localStorage.setItem('accessToken', MOCK_TOKEN);
     }
-  }, [token]);
+    setLoading(false);
+  }, []);
 
   return (
     <AuthContext.Provider

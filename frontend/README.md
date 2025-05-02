@@ -1,36 +1,103 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Frontend — AI Financial Copilot
 
-## Getting Started
+The frontend of the AI Financial Copilot project, built using Next.js 14 (App Router), TypeScript, and TailwindCSS.
 
-First, run the development server:
+It provides a modern, secure, and responsive interface for users to interact with the backend services, upload documents, categorize transactions, and engage with the copilot conversational AI.
+
+---
+
+## 🛠️ Tech Stack
+
+- Next.js 14 (React 18 under the hood)
+- TypeScript
+- TailwindCSS (utility-first CSS framework)
+- Axios (for API communication)
+- React Toastify (for notifications)
+- Modern App Router structure (using layouts, segments)
+
+---
+
+## 📦 Folder Structure
+
+frontend/ ├── src/ 
+          │ ├── app/ # Route segments, pages, and layouts (Next.js App Router) 
+          │ │ ├── ingestion/ 
+          │ │ │ ├── layout.tsx # Layout wrapper for ingestion section 
+          │ │ │ ├── page.tsx # Ingestion landing page 
+          │ │ │ └── upload/ 
+          │ │ │ └── page.tsx # Upload page for financial documents 
+          │ ├── components/ # Reusable UI components (e.g., FileUploader) 
+          │ ├── lib/ # API clients, utility libraries 
+          │ ├── styles/ # Global CSS (Tailwind setup) 
+          │ ├── public/ # Public assets (images, favicon) 
+          ├── tests/ # Unit and integration tests 
+          ├── package.json # Frontend dependencies and scripts 
+          ├── tsconfig.json # TypeScript configuration 
+          ├── jest.config.js # Testing configuration ├
+          ── .env.local.example # Frontend environment template
+
+---
+
+## 🚀 Getting Started
+
+### 1. Install Frontend Dependencies
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cd frontend
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Configure Environment Variables
+```bash
+cp .env.local.example .env.local
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Edit .env.local to set your backend API base URL.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Example:
+NEXT_PUBLIC_API_BASE_URL=http://localhost:5000/api
 
-## Learn More
+### 3. Run Frontend Development Server
+```bash
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+App will be available at: http://localhost:3000
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 4. 🔥 Current Features Implemented
+* Secure File Upload UI: CSV and PDF files with validation
+* Axios-based API Integration: Secure connection to backend services
+* Toast Notifications: Success/error alerts with React Toastify
+* Modern UI: TailwindCSS styling, mobile responsiveness
+* Authentication-ready API client: Prepared to handle JWT tokens
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 5. 🧪 Running Frontend Tests
+```bash
+npm run test
+```
+* Uses Jest and React Testing Library.
+* Components and pages are tested.
+* (Test coverage will grow as features expand.)
 
-## Deploy on Vercel
+### 5. 🧩 Planned Frontend Modules (Roadmap)
+* Transaction Categorization Screen
+* File Upload History and Processing Status
+* Insight Dashboard (proactive financial insights)
+* Copilot Conversational Chat UI
+* User Settings and Profile Management
+* Authentication Pages (Login/Register UI)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 6. 📚 Related Documentation
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Document	Location
+System Architecture	/docs/Architecture.md
+Getting Started Guide	/docs/Getting-Started.md
+
+### 7. 📢 Notes
+
+* App Router: Using Next.js 14 App Router (/app/ folder structure) — scalable and future-proof.
+* Optimized for Expansion: Components, pages, and services are separated for easy scaling.
+* API Base URL Dynamic: Controlled by environment variable NEXT_PUBLIC_API_BASE_URL.
+
+### 8. 🛡️ License
+© 2025 Raj Kumar. All rights reserved.

@@ -13,8 +13,8 @@ const apiClient = axios.create({
 
 // Request interceptor to add auth token
 apiClient.interceptors.request.use((config) => {
-  // const token = localStorage.getItem("accessToken");
-  const token = process
+  const token = localStorage.getItem("accessToken");
+  // const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN; // Use environment variable for token
   if (token) {
     if (config.headers) {
       config.headers["Authorization"] = `Bearer ${token}`;
@@ -117,6 +117,79 @@ export const deleteFile = async (fileId: string): Promise<unknown> => {
     return response.data;
   } catch (error) {
     console.error("Error deleting file:", error);
+    throw error;
+  }
+};
+
+// frontend/src/lib/apiClient.ts
+// Add these methods to your existing apiClient
+
+// Get transactions
+export const getTransactions = async (params?: Record<string, string>): Promise<unknown> => {
+  try {
+    const queryString = params ? new URLSearchParams(params).toString() : '';
+    const response = await apiClient.get(`/transactions${queryString ? `?${queryString}` : ''}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching transactions:", error);
+    throw error;
+  }
+};
+
+// Get transaction by ID
+export const getTransaction = async (id: string): Promise<unknown> => {
+  try {
+    const response = await apiClient.get(`/transactions/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching transaction:", error);
+    throw error;
+  }
+};
+
+// Create transaction
+export const createTransaction = async (data: unknown): Promise<unknown> => {
+  try {
+    const response = await apiClient.post(`/transactions`, data);
+    return response.data;
+  } catch (error) {
+    console.error("Error creating transaction:", error);
+    throw error;
+  }
+};
+
+// Update transaction
+export const updateTransaction = async (id: string, data: unknown): Promise<unknown> => {
+  try {
+    const response = await apiClient.put(`/transactions/${id}`, data);
+    return response.data;
+  } catch (error) {
+    console.error("Error updating transaction:", error);
+    throw error;
+  }
+};
+
+// Delete transaction
+export const deleteTransaction = async (id: string): Promise<unknown> => {
+  try {
+    const response = await apiClient.delete(`/transactions/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error deleting transaction:", error);
+    throw error;
+  }
+};
+
+// Categorize transactions
+export const categorizeTransactions = async (transactionIds: string[], accountCode: string): Promise<unknown> => {
+  try {
+    const response = await apiClient.post(`/transactions/categorize`, {
+      transactionIds,
+      accountCode,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error categorizing transactions:", error);
     throw error;
   }
 };

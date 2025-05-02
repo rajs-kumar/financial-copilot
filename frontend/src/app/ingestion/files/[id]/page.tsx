@@ -1,15 +1,16 @@
+"use client";
+
 import React from "react";
 import FileDetail from "../../../../components/FileDetail";
 import Link from "next/link";
+import { useParams } from 'next/navigation';
 
-interface FileDetailPageProps {
-  params: {
-    id: string;
-  };
-}
+const FileDetailPage = () => {
+  const { id } = useParams();
 
-const FileDetailPage = ({ params }: FileDetailPageProps) => {
-  const { id } = params;
+  if (!id || typeof id !== 'string') {
+    return <div>Invalid file ID</div>;
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">

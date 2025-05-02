@@ -15,6 +15,12 @@ interface FileRecord {
   processedAt?: string;
 }
 
+interface ApiResponse {
+  success: boolean;
+  data: FileRecord[];
+  message?: string;
+}
+
 const FileList: React.FC = () => {
   const [files, setFiles] = useState<FileRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,7 +31,7 @@ const FileList: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await getUploadedFiles();
+      const response = await getUploadedFiles() as ApiResponse;
       if (response.success) {
         setFiles(response.data);
       } else {
@@ -60,7 +66,7 @@ const FileList: React.FC = () => {
   const handleReprocess = async (fileId: string) => {
     try {
       setProcessingFiles((prev) => ({ ...prev, [fileId]: true }));
-      const response = await reprocessFile(fileId);
+      const response = await reprocessFile(fileId) as ApiResponse;
       if (response.success) {
         toast.success("File reprocessing started");
         fetchFiles(); // Refresh the list
@@ -79,7 +85,7 @@ const FileList: React.FC = () => {
     if (confirm("Are you sure you want to delete this file?")) {
       try {
         setProcessingFiles((prev) => ({ ...prev, [fileId]: true }));
-        const response = await deleteFile(fileId);
+        const response = await deleteFile(fileId) as ApiResponse;
         if (response.success) {
           toast.success("File deleted successfully");
           setFiles((prev) => prev.filter((file) => file.id !== fileId));
