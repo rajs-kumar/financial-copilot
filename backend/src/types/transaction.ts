@@ -1,6 +1,7 @@
 export interface Transaction {
   id?: string;
   userId: string;
+  fileId?: string; // Optional, for file-specific transactions
   date: Date;
   description: string;
   amount: number;
@@ -13,6 +14,7 @@ export interface Transaction {
   notes?: string;
   createdAt?: Date;
   updatedAt?: Date;
+  categorizations?: TransactionCategorization[];
 }
 
 export interface TransactionCategory {
@@ -23,11 +25,13 @@ export interface TransactionCategory {
 }
 
 export interface TransactionCategorization {
+  id: string;
   transactionId: string;
   categoryCode: string;
   confidence: number;
   source: 'rule' | 'llm' | 'user' | 'system';
   reasoning?: string;
+  createdAt: Date;
 }
 
 export interface TransactionAnalytics {
@@ -40,6 +44,7 @@ export interface TransactionAnalytics {
 }
 
 export interface TransactionFilter {
+  fileId: any;
   userId?: string;
   startDate?: Date;
   endDate?: Date;

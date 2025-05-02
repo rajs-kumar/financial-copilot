@@ -1,0 +1,136 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+  // output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String        @id @default(uuid())
+  email       String        @unique
+  password    String
+  firstName   String?       @map("first_name")
+  lastName    String?       @map("last_name")
+  role        String        @default("user")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @default(now()) @map("updated_at")
+  files       File[]
+  transactions Transaction[]
+  chatSessions ChatSession[]
+  insights     Insight[]
+
+  @@map("users")
+}
+
+model File {
+  id           String       @id @default(uuid())
+  userId       String       @map("user_id")
+  filePath     String       @map("file_path")
+  originalName String       @map("original_name")
+  fileSize     Int          @map("file_size")
+  mimeType     String       @map("mime_type")
+  fileType     String       @map("file_type")
+  status       String       @default("pending")
+  processedAt  DateTime?    @map("processed_at")
+  error        String?
+  createdAt    DateTime     @default(now()) @map("created_at")
+  metadata     Json?
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@map("files")
+}
+
+model Transaction {
+  id                String                  @id @default(uuid())
+  userId            String                  @map("user_id")
+  fileId            String?                 @map("file_id")
+  date              DateTime
+  description       String
+  amount            Decimal                 @db.Decimal(15, 2)
+  type              String
+  accountCode       String?                 @map("account_code")
+  confidence        Decimal?                @db.Decimal(4, 3)
+  isRecurring       Boolean?                @default(false) @map("is_recurring")
+  tags              String[]                @default([])
+  notes             String?
+  createdAt         DateTime                @default(now()) @map("created_at")
+  updatedAt         DateTime                @default(now()) @map("updated_at")
+  user              User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  file              File?                   @relation(fields: [fileId], references: [id], onDelete: SetNull)
+  categorizations   TransactionCategorization[]
+
+  @@map("transactions")
+}
+
+model TransactionCategorization {
+  id              String      @id @default(uuid())
+  transactionId   String      @map("transaction_id")
+  categoryCode    String      @map("category_code")
+  confidence      Decimal     @db.Decimal(4, 3)
+  source          String
+  reasoning       String?
+  createdAt       DateTime    @default(now()) @map("created_at")
+  transaction     Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@map("transaction_categorizations")
+}
+
+model ChatSession {
+  id         String        @id @default(uuid())
+  userId     String        @map("user_id")
+  createdAt  DateTime      @default(now()) @map("created_at")
+  updatedAt  DateTime      @default(now()) @map("updated_at")
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages   ChatMessage[]
+  insights   Insight[]
+
+  @@map("chat_sessions")
+}
+
+model ChatMessage {
+  id          String       @id @default(uuid())
+  sessionId   String       @map("session_id")
+  role        String
+  content     String
+  timestamp   DateTime     @default(now())
+  session     ChatSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("chat_messages") 
+}
+
+model Insight {
+  id          String       @id @default(uuid())
+  userId      String       @map("user_id")
+  sessionId   String?      @map("session_id")
+  type        String
+  content     String
+  confidence  Decimal      @db.Decimal(4, 3)
+  isRead      Boolean      @default(false) @map("is_read")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session     ChatSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  @@map("insights")
+}
+
+model AccountCategory {
+  code          String     @id
+  accountType   String     @map("account_type")
+  parentAccount String     @map("parent_account")
+  account       String
+  type          String?
+  description   String?
+
+  @@map("account_categories")
+}

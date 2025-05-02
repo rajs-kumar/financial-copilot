@@ -1,14 +1,17 @@
+// src/app.ts - modify the connection part
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
-import { errorHandler } from './middleware/errorHandler.js';
-import authRoutes from './routes/authRoutes.js';
-import dataIngestionRoutes from './routes/dataIngestionRoutes.js';
-import transactionRoutes from './routes/transactionRoutes.js';
-import copilotChatRoutes from './routes/copilotChatRoutes.js';
-import { connectDatabase } from './config/database.js';
-import { setupMessageQueue } from './orchestration/messageQueue.js';
+import { errorHandler } from './middleware/errorHandler';
+import authRoutes from './routes/authRoutes';
+import dataIngestionRoutes from './routes/dataIngestionRoutes';
+import transactionRoutes from './routes/transactionRoutes';
+import copilotChatRoutes from './routes/copilotChatRoutes';
+import { connectDatabase } from './config/database';
+import { setupMessageQueue } from './orchestration/messageQueue';
+import prisma from './services/db';
 import path from 'path';
 import fs from 'fs';
 
@@ -17,7 +20,7 @@ dotenv.config();
 
 // Initialize express app
 const app = express();
-const PORT = process.env.PORT || 5000;  // <-- recommend using 5000 for backend
+const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(helmet());
@@ -33,7 +36,7 @@ if (!fs.existsSync(uploadDir)) {
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/data-ingestion', dataIngestionRoutes);  // <-- FIXED HERE
+app.use('/api/data-ingestion', dataIngestionRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/copilot', copilotChatRoutes);
 
@@ -43,8 +46,15 @@ app.use(errorHandler);
 // Start server
 const startServer = async () => {
   try {
+    // Connect to PostgreSQL
     await connectDatabase();
+    
+    // Verify Prisma connection
+    await prisma.$connect();
+    console.log('Connected to database via Prisma');
+    
     await setupMessageQueue();
+    
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
@@ -62,6 +72,13 @@ process.on('uncaughtException', (error) => {
 process.on('unhandledRejection', (error) => {
   console.error('Unhandled Rejection:', error);
   process.exit(1);
+});
+
+// Clean up resources on shutdown
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  await prisma.$disconnect();
+  process.exit(0);
 });
 
 if (require.main === module) {

@@ -1,105 +1,122 @@
-import { Transaction, TransactionFilter } from '../types/transaction';
-import { query, getClient } from '../config/database';
+// src/services/transactionService.ts
 import { v4 as uuidv4 } from 'uuid';
+import prisma from './db';
+import { Transaction, TransactionFilter, TransactionCategorization } from '../types/transaction';
 import { getFullChartOfAccounts, findMatchingAccountCategory } from '../utils/chartOfAccounts';
+import { Decimal } from '@prisma/client/runtime/library';
 
 export class TransactionService {
   // Get transactions with filtering
   async getTransactions(filter: TransactionFilter): Promise<Transaction[]> {
     try {
       // Build the query with filters
-      let sqlQuery = `
-        SELECT * FROM transactions
-        WHERE 1=1
-      `;
+      const where: any = {
+        userId: filter.userId,
+      };
       
-      const params: any[] = [];
-      let paramIndex = 1;
-      
-      // Add userId filter (required)
-      if (!filter.userId) {
-        throw new Error('User ID is required');
-      }
-      
-      sqlQuery += ` AND user_id = $${paramIndex++}`;
-      params.push(filter.userId);
-      
-      // Add optional filters
-      if (filter.startDate) {
-        sqlQuery += ` AND date >= $${paramIndex++}`;
-        params.push(filter.startDate);
-      }
-      
-      if (filter.endDate) {
-        sqlQuery += ` AND date <= $${paramIndex++}`;
-        params.push(filter.endDate);
-      }
-      
-      if (filter.minAmount !== undefined) {
-        sqlQuery += ` AND amount >= $${paramIndex++}`;
-        params.push(filter.minAmount);
-      }
-      
-      if (filter.maxAmount !== undefined) {
-        sqlQuery += ` AND amount <= $${paramIndex++}`;
-        params.push(filter.maxAmount);
-      }
-      
-      if (filter.type) {
-        sqlQuery += ` AND type = $${paramIndex++}`;
-        params.push(filter.type);
-      }
-      
-      if (filter.accountCode) {
-        sqlQuery += ` AND account_code = $${paramIndex++}`;
-        params.push(filter.accountCode);
-      }
-      
-      if (filter.isRecurring !== undefined) {
-        sqlQuery += ` AND is_recurring = $${paramIndex++}`;
-        params.push(filter.isRecurring);
-      }
-      
-      if (filter.search) {
-        sqlQuery += ` AND description ILIKE $${paramIndex++}`;
-        params.push(`%${filter.search}%`);
-      }
-      
-      if (filter.tags && filter.tags.length > 0) {
-        sqlQuery += ` AND tags @> $${paramIndex++}`;
-        params.push(filter.tags);
-      }
-      
-      // Add sorting
-      sqlQuery += ` ORDER BY ${filter.sortBy || 'date'} ${filter.sortOrder || 'desc'}`;
-      
-      // Add pagination
-      if (filter.limit) {
-        sqlQuery += ` LIMIT $${paramIndex++}`;
-        params.push(filter.limit);
+      // Add date filters
+      if (filter.startDate || filter.endDate) {
+        where.date = {};
         
-        if (filter.offset) {
-          sqlQuery += ` OFFSET $${paramIndex++}`;
-          params.push(filter.offset);
+        if (filter.startDate) {
+          where.date.gte = filter.startDate;
+        }
+        
+        if (filter.endDate) {
+          where.date.lte = filter.endDate;
         }
       }
       
-      const result = await query(sqlQuery, params);
+      // Add amount filters
+      if (filter.minAmount !== undefined || filter.maxAmount !== undefined) {
+        where.amount = {};
+        
+        if (filter.minAmount !== undefined) {
+          where.amount.gte = filter.minAmount;
+        }
+        
+        if (filter.maxAmount !== undefined) {
+          where.amount.lte = filter.maxAmount;
+        }
+      }
       
-      return result.rows.map((row: { id: any; user_id: any; date: any; description: any; amount: string; type: any; account_code: any; confidence: any; is_recurring: any; tags: any; notes: any; created_at: any; updated_at: any; }) => ({
-        id: row.id,
-        userId: row.user_id,
-        date: row.date,
-        description: row.description,
-        amount: parseFloat(row.amount),
-        type: row.type,
-        accountCode: row.account_code,
-        confidence: row.confidence,
-        isRecurring: row.is_recurring,
-        tags: row.tags,
-        notes: row.notes,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at
+      // Add type filter
+      if (filter.type) {
+        where.type = filter.type;
+      }
+      
+      // Add account code filter
+      if (filter.accountCode) {
+        where.accountCode = filter.accountCode;
+      }
+      
+      // Add file filter
+      if (filter.fileId) {
+        where.fileId = filter.fileId;
+      }
+      
+      // Add recurring filter
+      if (filter.isRecurring !== undefined) {
+        where.isRecurring = filter.isRecurring;
+      }
+      
+      // Add search filter for description
+      if (filter.search) {
+        where.description = {
+          contains: filter.search,
+          mode: 'insensitive',
+        };
+      }
+      
+      // Add tags filter
+      if (filter.tags && filter.tags.length > 0) {
+        where.tags = {
+          hasSome: filter.tags,
+        };
+      }
+      
+      // Execute the query
+      const transactions = await prisma.transaction.findMany({
+        where,
+        orderBy: {
+          [filter.sortBy || 'date']: filter.sortOrder || 'desc',
+        },
+        take: filter.limit || 50,
+        skip: filter.offset || 0,
+        include: {
+          categorizations: {
+            orderBy: {
+              createdAt: 'desc',
+            },
+            take: 1,
+          },
+        },
+      });
+      
+      // Convert Decimal types to numbers for JSON serialization
+      return transactions.map((t: { id: any; userId: any; fileId: any; date: any; description: any; amount: Decimal | null; type: string; accountCode: any; confidence: Decimal | null; isRecurring: any; tags: string[]; notes: any; createdAt: any; updatedAt: any; categorizations: string | any[]; }) => ({
+        id: t.id,
+        userId: t.userId,
+        fileId: t.fileId || undefined,
+        date: t.date,
+        description: t.description,
+        amount: this.decimalToNumber(t.amount) ?? 0, // Ensure amount is always a number
+        type: t.type as 'debit' | 'credit',
+        accountCode: t.accountCode || undefined,
+        confidence: t.confidence ? this.decimalToNumber(t.confidence) : undefined,
+        isRecurring: t.isRecurring || false,
+        tags: t.tags as string[],
+        notes: t.notes || undefined,
+        createdAt: t.createdAt,
+        updatedAt: t.updatedAt,
+        // Include latest categorization if available
+        categorization: t.categorizations.length > 0 ? {
+          id: t.categorizations[0].id,
+          categoryCode: t.categorizations[0].categoryCode,
+          confidence: this.decimalToNumber(t.categorizations[0].confidence),
+          source: t.categorizations[0].source as 'rule' | 'llm' | 'user' | 'system',
+          reasoning: t.categorizations[0].reasoning || undefined,
+        } : undefined
       }));
     } catch (error) {
       console.error('Error getting transactions:', error);
@@ -107,34 +124,57 @@ export class TransactionService {
     }
   }
   
+  // Helper method to convert Decimal to number
+  private decimalToNumber(decimal: Decimal | null): number | undefined {
+    if (decimal === null) return undefined;
+    return decimal instanceof Decimal ? decimal.toNumber() : decimal;
+  }
+  
   // Get a single transaction by ID
   async getTransactionById(id: string, userId: string): Promise<Transaction | null> {
     try {
-      const result = await query(
-        `SELECT * FROM transactions WHERE id = $1 AND user_id = $2`,
-        [id, userId]
-      );
+      const transaction = await prisma.transaction.findFirst({
+        where: {
+          id,
+          userId,
+        },
+        include: {
+          categorizations: {
+            orderBy: {
+              createdAt: 'desc',
+            },
+          },
+        },
+      });
       
-      if (result.rows.length === 0) {
+      if (!transaction) {
         return null;
       }
       
-      const row = result.rows[0];
-      
       return {
-        id: row.id,
-        userId: row.user_id,
-        date: row.date,
-        description: row.description,
-        amount: parseFloat(row.amount),
-        type: row.type,
-        accountCode: row.account_code,
-        confidence: row.confidence,
-        isRecurring: row.is_recurring,
-        tags: row.tags,
-        notes: row.notes,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at
+        id: transaction.id,
+        userId: transaction.userId,
+        fileId: transaction.fileId || undefined,
+        date: transaction.date,
+        description: transaction.description,
+        amount: this.decimalToNumber(transaction.amount) as number,
+        type: transaction.type as 'debit' | 'credit',
+        accountCode: transaction.accountCode || '000',
+        confidence: transaction.confidence ? this.decimalToNumber(transaction.confidence) : undefined,
+        isRecurring: transaction.isRecurring || false,
+        tags: transaction.tags as string[],
+        notes: transaction.notes || undefined,
+        createdAt: transaction.createdAt,
+        updatedAt: transaction.updatedAt,
+        categorizations: transaction.categorizations.map((c: { id: any; categoryCode: any; confidence: Decimal | null; source: string; reasoning: any; createdAt: Date; }) => ({
+          id: c.id,
+          transactionId: transaction.id,
+          categoryCode: c.categoryCode,
+          confidence: this.decimalToNumber(c.confidence) as number,
+          source: c.source as 'rule' | 'llm' | 'user' | 'system',
+          reasoning: c.reasoning || undefined,
+          createdAt: c.createdAt
+        })),
       };
     } catch (error) {
       console.error(`Error getting transaction ${id}:`, error);
@@ -146,7 +186,6 @@ export class TransactionService {
   async createTransaction(transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>): Promise<Transaction> {
     try {
       const id = uuidv4();
-      const now = new Date();
       
       // If no account code provided, try to categorize
       if (!transaction.accountCode) {
@@ -166,44 +205,53 @@ export class TransactionService {
         }
       }
       
-      const result = await query(
-        `INSERT INTO transactions 
-         (id, user_id, date, description, amount, type, account_code, confidence, is_recurring, tags, notes, created_at, updated_at) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
-         RETURNING *`,
-        [
+      // Create transaction in database
+      const result = await prisma.transaction.create({
+        data: {
           id,
-          transaction.userId,
-          transaction.date,
-          transaction.description,
-          transaction.amount,
-          transaction.type,
-          transaction.accountCode,
-          transaction.confidence || 0.5,
-          transaction.isRecurring || false,
-          transaction.tags || [],
-          transaction.notes || '',
-          now,
-          now
-        ]
-      );
+          userId: transaction.userId,
+          fileId: transaction.fileId,
+          date: transaction.date,
+          description: transaction.description,
+          amount: transaction.amount,
+          type: transaction.type,
+          accountCode: transaction.accountCode,
+          confidence: transaction.confidence || 0.5,
+          isRecurring: transaction.isRecurring || false,
+          tags: transaction.tags || [],
+          notes: transaction.notes || '',
+        },
+      });
       
-      const row = result.rows[0];
+      // If categorization was done, create a categorization record
+      if (transaction.accountCode) {
+        await prisma.transactionCategorization.create({
+          data: {
+            id: uuidv4(),
+            transactionId: id,
+            categoryCode: transaction.accountCode,
+            confidence: transaction.confidence || 0.5,
+            source: 'system',
+            reasoning: 'Initial categorization',
+          }
+        });
+      }
       
       return {
-        id: row.id,
-        userId: row.user_id,
-        date: row.date,
-        description: row.description,
-        amount: parseFloat(row.amount),
-        type: row.type,
-        accountCode: row.account_code,
-        confidence: row.confidence,
-        isRecurring: row.is_recurring,
-        tags: row.tags,
-        notes: row.notes,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at
+        id: result.id,
+        userId: result.userId,
+        fileId: result.fileId || undefined,
+        date: result.date,
+        description: result.description,
+        amount: this.decimalToNumber(result.amount) as number,
+        type: result.type as 'debit' | 'credit',
+        accountCode: result.accountCode || '000',
+        confidence: result.confidence ? this.decimalToNumber(result.confidence) : undefined,
+        isRecurring: result.isRecurring || false,
+        tags: result.tags as string[],
+        notes: result.notes || undefined,
+        createdAt: result.createdAt,
+        updatedAt: result.updatedAt,
       };
     } catch (error) {
       console.error('Error creating transaction:', error);
@@ -221,94 +269,100 @@ export class TransactionService {
         return null;
       }
       
-      // Build update query dynamically
-      const updateFields: string[] = [];
-      const values: any[] = [];
-      let paramIndex = 1;
+      // Prepare data to update
+      const updateData: any = {};
       
-      // Add fields to update
       if (updates.date) {
-        updateFields.push(`date = $${paramIndex++}`);
-        values.push(updates.date);
+        updateData.date = updates.date;
       }
       
       if (updates.description) {
-        updateFields.push(`description = $${paramIndex++}`);
-        values.push(updates.description);
+        updateData.description = updates.description;
       }
       
       if (updates.amount !== undefined) {
-        updateFields.push(`amount = $${paramIndex++}`);
-        values.push(updates.amount);
+        updateData.amount = updates.amount;
       }
       
       if (updates.type) {
-        updateFields.push(`type = $${paramIndex++}`);
-        values.push(updates.type);
+        updateData.type = updates.type;
       }
       
-      if (updates.accountCode) {
-        updateFields.push(`account_code = $${paramIndex++}`);
-        values.push(updates.accountCode);
+      if (updates.accountCode !== undefined) {
+        updateData.accountCode = updates.accountCode;
+        
+        // When account code is updated, create a new categorization record
+        if (updates.accountCode !== existingTransaction.accountCode) {
+          await prisma.transactionCategorization.create({
+            data: {
+              id: uuidv4(),
+              transactionId: id,
+              categoryCode: updates.accountCode || '000',
+              confidence: updates.confidence || 0.9, // High confidence for manual updates
+              source: 'user',
+              reasoning: 'User categorization',
+            }
+          });
+        }
       }
       
       if (updates.confidence !== undefined) {
-        updateFields.push(`confidence = $${paramIndex++}`);
-        values.push(updates.confidence);
+        updateData.confidence = updates.confidence;
       }
       
       if (updates.isRecurring !== undefined) {
-        updateFields.push(`is_recurring = $${paramIndex++}`);
-        values.push(updates.isRecurring);
+        updateData.isRecurring = updates.isRecurring;
       }
       
-      if (updates.tags) {
-        updateFields.push(`tags = $${paramIndex++}`);
-        values.push(updates.tags);
+      if (updates.tags !== undefined) {
+        updateData.tags = updates.tags;
       }
       
       if (updates.notes !== undefined) {
-        updateFields.push(`notes = $${paramIndex++}`);
-        values.push(updates.notes);
+        updateData.notes = updates.notes;
       }
       
       // Always update the updated_at timestamp
-      updateFields.push(`updated_at = $${paramIndex++}`);
-      values.push(new Date());
-      
-      // Add the WHERE clause parameters
-      values.push(id);
-      values.push(userId);
+      updateData.updatedAt = new Date();
       
       // Execute the update
-      const result = await query(
-        `UPDATE transactions 
-         SET ${updateFields.join(', ')} 
-         WHERE id = $${paramIndex++} AND user_id = $${paramIndex++} 
-         RETURNING *`,
-        values
-      );
-      
-      if (result.rows.length === 0) {
-        return null;
-      }
-      
-      const row = result.rows[0];
+      const result = await prisma.transaction.update({
+        where: { id },
+        data: updateData,
+        include: {
+          categorizations: {
+            orderBy: {
+              createdAt: 'desc',
+            },
+            take: 1,
+          },
+        },
+      });
       
       return {
-        id: row.id,
-        userId: row.user_id,
-        date: row.date,
-        description: row.description,
-        amount: parseFloat(row.amount),
-        type: row.type,
-        accountCode: row.account_code,
-        confidence: row.confidence,
-        isRecurring: row.is_recurring,
-        tags: row.tags,
-        notes: row.notes,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at
+        id: result.id,
+        userId: result.userId,
+        fileId: result.fileId || undefined,
+        date: result.date,
+        description: result.description,
+        amount: this.decimalToNumber(result.amount) as number,
+        type: result.type as 'debit' | 'credit',
+        accountCode: result.accountCode || '000',
+        confidence: result.confidence ? this.decimalToNumber(result.confidence) : undefined,
+        isRecurring: result.isRecurring || false,
+        tags: result.tags as string[],
+        notes: result.notes || undefined,
+        createdAt: result.createdAt,
+        updatedAt: result.updatedAt,
+        categorizations: result.categorizations.length > 0 ? [{
+          id: result.categorizations[0].id,
+          transactionId: result.id,
+          categoryCode: result.categorizations[0].categoryCode,
+          confidence: this.decimalToNumber(result.categorizations[0].confidence) as number,
+          source: result.categorizations[0].source as 'rule' | 'llm' | 'user' | 'system',
+          reasoning: result.categorizations[0].reasoning || undefined,
+          createdAt: result.categorizations[0].createdAt,
+        }] : []
       };
     } catch (error) {
       console.error(`Error updating transaction ${id}:`, error);
@@ -319,12 +373,15 @@ export class TransactionService {
   // Delete a transaction
   async deleteTransaction(id: string, userId: string): Promise<boolean> {
     try {
-      const result = await query(
-        `DELETE FROM transactions WHERE id = $1 AND user_id = $2 RETURNING id`,
-        [id, userId]
-      );
+      // Delete transaction and related categorizations (via cascade)
+      const result = await prisma.transaction.deleteMany({
+        where: {
+          id,
+          userId,
+        },
+      });
       
-      return result.rows.length > 0;
+      return result.count > 0;
     } catch (error) {
       console.error(`Error deleting transaction ${id}:`, error);
       throw error;
@@ -334,71 +391,80 @@ export class TransactionService {
   // Get transaction statistics
   async getTransactionStats(userId: string, startDate?: Date, endDate?: Date): Promise<any> {
     try {
-      const params: any[] = [userId];
-      let dateFilter = '';
+      // Build the where clause
+      const where: any = { userId };
       
-      if (startDate) {
-        dateFilter += ` AND date >= $${params.length + 1}`;
-        params.push(startDate);
+      if (startDate || endDate) {
+        where.date = {};
+        
+        if (startDate) {
+          where.date.gte = startDate;
+        }
+        
+        if (endDate) {
+          where.date.lte = endDate;
+        }
       }
       
-      if (endDate) {
-        dateFilter += ` AND date <= $${params.length + 1}`;
-        params.push(endDate);
-      }
-      
-      // Get total income and expenses
-      const totalsResult = await query(
-        `SELECT
-          type,
-          SUM(amount) as total
-         FROM transactions
-         WHERE user_id = $1${dateFilter}
-         GROUP BY type`,
-        params
-      );
+      // Get totals by type (income vs expense)
+      const typeGrouping = await prisma.transaction.groupBy({
+        by: ['type'],
+        where,
+        _sum: {
+          amount: true,
+        },
+      });
       
       // Get totals by category
-      const categoryResult = await query(
-        `SELECT
-          account_code,
-          SUM(amount) as total,
-          COUNT(*) as count
-         FROM transactions
-         WHERE user_id = $1${dateFilter}
-         GROUP BY account_code
-         ORDER BY total DESC`,
-        params
-      );
+      const categoryGrouping = await prisma.transaction.groupBy({
+        by: ['accountCode'],
+        where,
+        _sum: {
+          amount: true,
+        },
+        _count: {
+          id: true,
+        },
+        orderBy: {
+          _sum: {
+            amount: 'desc',
+          },
+        },
+      });
       
-      // Get month-over-month trends
-      const trendsResult = await query(
-        `SELECT
+      // Get monthly trends
+      // This is more complex with Prisma, so we'll use a raw query
+      const trendResults = await prisma.$queryRaw`
+        SELECT
           DATE_TRUNC('month', date) as month,
           type,
           SUM(amount) as total
-         FROM transactions
-         WHERE user_id = $1${dateFilter}
-         GROUP BY month, type
-         ORDER BY month ASC`,
-        params
-      );
+        FROM transactions
+        WHERE user_id = ${userId}
+          ${startDate ? `AND date >= '${startDate.toISOString()}'` : ''}
+          ${endDate ? `AND date <= '${endDate.toISOString()}'` : ''}
+        GROUP BY month, type
+        ORDER BY month ASC
+      `;
       
+      // Format the results
       return {
-        totals: totalsResult.rows.reduce((acc: { [x: string]: number; }, row: { type: string | number; total: string; }) => {
-          acc[row.type] = parseFloat(row.total);
+        totals: typeGrouping.reduce((acc: { [x: string]: number; }, row: { type: string | number; _sum: { amount: Decimal | null; }; }) => {
+          acc[row.type] = this.decimalToNumber(row._sum.amount) || 0;
           return acc;
-        }, {}),
-        categories: categoryResult.rows.map((row: { account_code: any; total: string; count: string; }) => ({
-          accountCode: row.account_code,
-          total: parseFloat(row.total),
-          count: parseInt(row.count)
+        }, {} as Record<string, number>),
+        
+        categories: categoryGrouping.map((row: { accountCode: any; _sum: { amount: Decimal | null; }; _count: { id: any; }; }) => ({
+          accountCode: row.accountCode || 'uncategorized',
+          total: this.decimalToNumber(row._sum.amount) || 0,
+          count: row._count.id,
         })),
-        trends: trendsResult.rows.map((row: { month: any; type: any; total: string; }) => ({
+        
+        trends: (trendResults as any[]).map(row => ({
           month: row.month,
           type: row.type,
-          total: parseFloat(row.total)
-        }))
+          total: this.decimalToNumber(row.total) || 0,
+        })),
       };
     } catch (error) {
       console.error('Error getting transaction stats:', error);
@@ -409,19 +475,137 @@ export class TransactionService {
   // Batch categorize transactions
   async categorizeTransactions(transactionIds: string[], accountCode: string, userId: string): Promise<number> {
     try {
-      // Update all transactions with the new account code
-      const result = await query(
-        `UPDATE transactions
-         SET account_code = $1, confidence = $2, updated_at = $3
-         WHERE id = ANY($4) AND user_id = $5
-         RETURNING id`,
-        [accountCode, 0.9, new Date(), transactionIds, userId]
-      );
+      let updatedCount = 0;
       
-      return result.rows.length;
+      // Get all transactions that belong to the user
+      const transactions = await prisma.transaction.findMany({
+        where: {
+          id: { in: transactionIds },
+          userId,
+        },
+      });
+      
+      // Only proceed with the ones that actually belong to the user
+      const validTransactionIds = transactions.map((t: { id: any; }) => t.id);
+      
+      if (validTransactionIds.length === 0) {
+        return 0;
+      }
+      
+      // Batch update all matching transactions
+      const updateResult = await prisma.transaction.updateMany({
+        where: {
+          id: { in: validTransactionIds },
+        },
+        data: {
+          accountCode,
+          confidence: 0.9, // High confidence for manual updates
+          updatedAt: new Date(),
+        },
+      });
+      
+      updatedCount = updateResult.count;
+      
+      // Create categorization records for each transaction
+      const categorizationData = validTransactionIds.map((transactionId: any) => ({
+        id: uuidv4(),
+        transactionId,
+        categoryCode: accountCode,
+        confidence: 0.9,
+        source: 'user',
+        reasoning: 'Batch categorization by user',
+      }));
+      
+      await prisma.transactionCategorization.createMany({
+        data: categorizationData,
+      });
+      
+      return updatedCount;
     } catch (error) {
       console.error('Error categorizing transactions:', error);
       throw error;
     }
   }
+  
+  // Import transactions from a file
+  async importTransactionsFromFile(fileId: string, userId: string, transactions: Omit<Transaction, 'id' | 'userId' | 'fileId' | 'createdAt' | 'updatedAt'>[]): Promise<{ total: number; success: number; failed: number }> {
+    try {
+      let successCount = 0;
+      let failedCount = 0;
+      
+      // Process transactions in batches of 100
+      const batchSize = 100;
+      const batches = [];
+      
+      for (let i = 0; i < transactions.length; i += batchSize) {
+        batches.push(transactions.slice(i, i + batchSize));
+      }
+      
+      for (const batch of batches) {
+        // Prepare data for batch insert
+        const transactionData = batch.map(transaction => {
+          const id = uuidv4();
+          return {
+            id,
+            userId,
+            fileId,
+            date: transaction.date,
+            description: transaction.description,
+            amount: transaction.amount,
+            type: transaction.type,
+            accountCode: transaction.accountCode || '000',
+            confidence: transaction.confidence || 0.5,
+            isRecurring: transaction.isRecurring || false,
+            tags: transaction.tags || [],
+            notes: transaction.notes || '',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          };
+        });
+        
+        try {
+          // Insert batch of transactions
+          await prisma.transaction.createMany({
+            data: transactionData,
+            skipDuplicates: true,
+          });
+          
+          // Create categorization records for transactions with account codes
+          const categorizationData = transactionData
+            .filter(t => t.accountCode && t.accountCode !== '000')
+            .map(t => ({
+              id: uuidv4(),
+              transactionId: t.id,
+              categoryCode: t.accountCode as string,
+              confidence: t.confidence as number,
+              source: 'system',
+              reasoning: 'Imported from file',
+            }));
+          
+          if (categorizationData.length > 0) {
+            await prisma.transactionCategorization.createMany({
+              data: categorizationData,
+            });
+          }
+          
+          successCount += transactionData.length;
+        } catch (error) {
+          console.error('Error importing batch of transactions:', error);
+          failedCount += batch.length;
+        }
+      }
+      
+      return {
+        total: transactions.length,
+        success: successCount,
+        failed: failedCount,
+      };
+    } catch (error) {
+      console.error('Error importing transactions from file:', error);
+      throw error;
+    }
+  }
 }
+
+// Import Prisma here to access the raw SQL functionality
+import { Prisma } from '@prisma/client';

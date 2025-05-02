@@ -227,6 +227,8 @@ Include specific numbers and insights when relevant.
       const transactions = await this.transactionService.getTransactions({
         userId: input.userId,
         limit: 50 // Get more transactions for better insights
+        ,
+        fileId: undefined
       });
       
       if (transactions.length === 0) {

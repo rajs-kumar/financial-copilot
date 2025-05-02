@@ -1,3 +1,47 @@
+/*
+import { pgTable, uuid, varchar, timestamp, text, decimal } from 'drizzle-orm/pg-core';
+
+export const users = pgTable('users', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  email: varchar('email', { length: 255 }).notNull().unique(),
+  passwordHash: varchar('password_hash', { length: 255 }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
+});
+
+export const files = pgTable('files', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').references(() => users.id),
+  filename: varchar('filename', { length: 255 }).notNull(),
+  originalName: varchar('original_name', { length: 255 }).notNull(),
+  mimeType: varchar('mime_type', { length: 100 }).notNull(),
+  size: decimal('size', { precision: 20, scale: 0 }).notNull(),
+  status: varchar('status', { length: 50 }).default('pending'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
+});
+
+export const transactions = pgTable('transactions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  fileId: uuid('file_id').references(() => files.id),
+  userId: uuid('user_id').references(() => users.id),
+  date: timestamp('date').notNull(),
+  description: text('description').notNull(),
+  amount: decimal('amount', { precision: 15, scale: 2 }).notNull(),
+  type: varchar('type', { length: 10 }).notNull(),
+  category: varchar('category', { length: 50 }),
+  accountCode: varchar('account_code', { length: 10 }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
+});
+*/
+
+-- This SQL script creates the initial schema for the database
+-- It includes tables for users, files, transactions, chat sessions, and insights
+-- It also includes indexes for better performance and an extension for vector search
+-- This script is intended to be run in a PostgreSQL database
+-- Ensure the database is in the correct state before running this script
+
 -- Create users table
 CREATE TABLE IF NOT EXISTS users (
   id UUID PRIMARY KEY,

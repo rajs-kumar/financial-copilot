@@ -74,6 +74,9 @@ export class TransactionCategorizationAgent extends BaseAgent {
               categoryCode: transaction.accountCode,
               confidence: transaction.confidence,
               source: 'system' // Using existing categorization
+              ,
+              id: '',
+              createdAt: new Date()
             });
             successCount++;
             confidenceSum += transaction.confidence;
@@ -121,7 +124,9 @@ export class TransactionCategorizationAgent extends BaseAgent {
             categoryCode: updatedTransaction.accountCode,
             confidence,
             source,
-            reasoning
+            reasoning,
+            id: '',
+            createdAt: new Date()
           });
           
           successCount++;
