@@ -11,7 +11,6 @@ interface AuthContextType {
   error: string | null;
 }
 
-// Create context with default values
 const AuthContext = createContext<AuthContextType>({
   token: null,
   isAuthenticated: false,
@@ -25,8 +24,7 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-// For development, using a mock token
-const MOCK_TOKEN = process.env.NEXT_PUBLIC_MOCK_TOKEN;
+// const MOCK_TOKEN = process.env.NEXT_PUBLIC_MOCK_TOKEN;
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
@@ -34,16 +32,51 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Check for token in localStorage on initial load
-    const storedToken = localStorage.getItem('accessToken');
-    if (storedToken) {
-      setToken(storedToken);
-    } else if (process.env.NODE_ENV === 'development' && MOCK_TOKEN) {
-      // In development, use mock token if no stored token
-      setToken(MOCK_TOKEN);
-      localStorage.setItem('accessToken', MOCK_TOKEN);
+  const isTokenValid = (token: string) => {
+    try {
+      // In development mode, consider any well-formed token valid
+      if (process.env.NODE_ENV === 'development') {
+        const parts = token.split('.');
+        if (parts.length !== 3) return false;
+        
+        try {
+          // Check if the token has a valid structure (parseable JSON)
+          const payload = JSON.parse(atob(parts[1]));
+          
+          // Check for minimum required fields
+          if (!payload.exp) return true; // No expiration in dev mode is fine
+          
+          // If it has expiration, check it
+          return payload.exp * 1000 > Date.now();
+        } catch {
+          return false; // Not a valid JSON in the payload
+        }
+      }
+      
+      // Production validation
+      const decoded = JSON.parse(atob(token.split('.')[1]));
+      return decoded.exp * 1000 > Date.now();
+    } catch {
+      return false;
     }
+  };
+
+  useEffect(() => {
+    const storedToken = localStorage.getItem('accessToken');
+
+    if (storedToken && isTokenValid(storedToken)) {
+      setToken(storedToken);
+    } else if (storedToken) {
+      localStorage.removeItem('accessToken');
+      setToken(null);
+    }
+
+    // Remove auto-login in development mode
+    // else if (process.env.NODE_ENV === 'development' && MOCK_TOKEN) {
+    //   setToken(MOCK_TOKEN);
+    //   localStorage.setItem('accessToken', MOCK_TOKEN);
+    // }
+
     setLoading(false);
   }, []);
 
@@ -52,10 +85,29 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setLoading(true);
       setError(null);
 
-      const response = await axios.post(`${API_BASE_URL}/auth/login`, {
-        email,
-        password,
-      }) as { data: { success: boolean; data: { token: string }; message?: string } };
+      // In development mode, accept any login credentials
+      if (process.env.NODE_ENV === 'development') {
+        // Create a mock JWT token
+        const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+        const payload = btoa(JSON.stringify({
+          sub: '1234567890',
+          name: email || 'Test User',
+          email: email || 'test@example.com',
+          iat: Math.floor(Date.now() / 1000),
+          exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 // 24 hours
+        }));
+        const signature = btoa('fake_signature');
+        
+        const mockToken = `${header}.${payload}.${signature}`;
+        setToken(mockToken);
+        localStorage.setItem('accessToken', mockToken);
+        return true;
+      }
+
+      // In production, validate against the real API
+      const response = await axios.post(`${API_BASE_URL}/auth/login`, { email, password }) as {
+        data: { success: boolean; data: { token: string }; message?: string }
+      };
 
       if (response.data.success && response.data.data.token) {
         const newToken = response.data.data.token;
@@ -67,8 +119,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         return false;
       }
     } catch (err) {
-      const errorMessage = 
-        err instanceof Error ? err.message : 'An unknown error occurred';
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
       setError(errorMessage);
       return false;
     } finally {
@@ -79,35 +130,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const logout = () => {
     localStorage.removeItem('accessToken');
     setToken(null);
-  };
 
-  // Function to check if token is valid (e.g., not expired)
-  const isTokenValid = (token: string) => {
-    try {
-      // For JWT tokens, you can check expiration
-      const decoded = JSON.parse(atob(token.split('.')[1]));
-      return decoded.exp * 1000 > Date.now();
-    } catch {
-      return false;
+    // Optionally redirect to login
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login';
     }
   };
-
-  // Update axios defaults when token changes
-  useEffect(() => {
-    const storedToken = localStorage.getItem('accessToken');
-    if (storedToken && isTokenValid(storedToken)) {
-      setToken(storedToken);
-    } else if (storedToken) {
-      // Token exists but is invalid
-      localStorage.removeItem('accessToken');
-      setToken(null);
-    } else if (process.env.NODE_ENV === 'development' && MOCK_TOKEN) {
-      // In development, use mock token if no stored token
-      setToken(MOCK_TOKEN);
-      localStorage.setItem('accessToken', MOCK_TOKEN);
-    }
-    setLoading(false);
-  }, []);
 
   return (
     <AuthContext.Provider

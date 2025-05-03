@@ -10,10 +10,12 @@ import "react-toastify/dist/ReactToastify.css";
 const FileUploader = () => {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       setFile(e.target.files[0]);
+      setUploadProgress(0); // Reset progress on new file selection
     }
   };
 
@@ -24,9 +26,10 @@ const FileUploader = () => {
     }
 
     setUploading(true);
+    setUploadProgress(0);
 
     try {
-      await uploadFile(file);
+      await uploadFile(file, (percentage) => setUploadProgress(percentage));
       toast.success("File uploaded successfully!");
       setFile(null);
     } catch (error) {
@@ -38,13 +41,29 @@ const FileUploader = () => {
   };
 
   return (
-    <div className="flex flex-col space-y-4">
+    <div className="flex flex-col space-y-4 w-full max-w-md mx-auto">
       <input
         type="file"
         accept=".csv,.pdf"
         onChange={handleFileChange}
         className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
       />
+
+      {uploading && (
+        <div className="w-full bg-gray-200 rounded-full h-3">
+          <div
+            className="bg-blue-600 h-3 rounded-full transition-all duration-200"
+            style={{ width: `${uploadProgress}%` }}
+          />
+        </div>
+      )}
+
+      {uploading && (
+        <div className="text-sm text-gray-600 text-center">
+          Uploading: {uploadProgress}%
+        </div>
+      )}
+
       <button
         onClick={handleUpload}
         disabled={uploading || !file}

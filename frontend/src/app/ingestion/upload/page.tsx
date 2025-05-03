@@ -1,6 +1,5 @@
 // frontend/src/app/ingestion/upload/page.tsx
 
-// frontend/src/app/ingestion/upload/page.tsx
 
 import React from "react";
 import DragDropUploader from "../../../components/DragDropUploader";
