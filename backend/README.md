@@ -73,8 +73,10 @@ Development Mode
 bash
 Copy
 Edit
+
 # Start in development mode (hot reload with ts-node-dev)
 npm run dev
+
 🔥 API Documentation
 Authentication Routes
 
@@ -97,6 +99,7 @@ Copilot Chat Routes
 Method	Endpoint	Description
 POST	/api/copilot/chat	Send a query to the copilot
 GET	/api/copilot/insights	Get proactive insights from the system
+
 🧪 Running Tests
 Run backend unit and integration tests using Jest:
 
