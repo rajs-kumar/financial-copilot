@@ -19,6 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AuthProvider>
           <Navigation />
           <main className="min-h-screen bg-gray-50">
+            {/* Don't use AuthGuard here - each protected route will handle it */}
             {children}
           </main>
           <ToastContainer 

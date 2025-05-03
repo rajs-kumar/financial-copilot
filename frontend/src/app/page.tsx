@@ -1,8 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useAuth } from "../contexts/AuthContext";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { 
   BarChart, 
@@ -13,6 +11,7 @@ import {
   Tooltip, 
   ResponsiveContainer 
 } from 'recharts';
+import AuthGuard from "../components/AuthGuard";
 
 const mockData = {
   transactions: {
@@ -65,31 +64,18 @@ const loadDashboardData = (): Promise<DashboardData> => {
 };
 
 export default function Dashboard() {
-  const { isAuthenticated } = useAuth();
-  const router = useRouter();
-  interface DashboardData {
-    transactions: {
-      total: number;
-      uncategorized: number;
-      recent: { id: string; date: string; description: string; amount: number; type: string; accountCode: string }[];
-    };
-    files: {
-      total: number;
-      processing: number;
-      recent: { id: string; name: string; status: string; date: string }[];
-    };
-    spending: { category: string; amount: number }[];
-  }
-  
+  return (
+    <AuthGuard>
+      <DashboardContent />
+    </AuthGuard>
+  );
+}
+
+function DashboardContent() {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push("/login");
-      return;
-    }
-
     const fetchData = async () => {
       try {
         setLoading(true);
@@ -103,11 +89,7 @@ export default function Dashboard() {
     };
 
     fetchData();
-  }, [isAuthenticated, router]);
-
-  if (!isAuthenticated) {
-    return null; // Will redirect in useEffect
-  }
+  }, []);
 
   if (loading) {
     return (
