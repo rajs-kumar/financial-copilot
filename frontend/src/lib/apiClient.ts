@@ -1,4 +1,5 @@
 import axios, { AxiosError, AxiosRequestConfig, AxiosProgressEvent } from 'axios';
+import { ApiResponse, FileStatus } from '../types/api';
 
 // API configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api";
@@ -89,10 +90,10 @@ export const getUploadedFiles = async (): Promise<unknown> => {
 };
 
 // Get file status
-export const getFileStatus = async (fileId: string): Promise<unknown> => {
+export const getFileStatus = async (fileId: string): Promise<ApiResponse<FileStatus>> => {
   try {
     const response = await apiClient.get(`/data-ingestion/files/${fileId}/status`);
-    return response.data;
+    return response.data as ApiResponse<FileStatus>;
   } catch (error) {
     console.error("Error fetching file status:", error);
     throw error;

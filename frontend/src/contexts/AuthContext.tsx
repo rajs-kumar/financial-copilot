@@ -66,6 +66,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     if (storedToken && isTokenValid(storedToken)) {
       setToken(storedToken);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
     } else if (storedToken) {
       localStorage.removeItem('accessToken');
       setToken(null);
@@ -113,6 +114,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         const newToken = response.data.data.token;
         setToken(newToken);
         localStorage.setItem('accessToken', newToken);
+        axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
         return true;
       } else {
         setError(response.data.message || 'Login failed');

@@ -96,14 +96,16 @@ const DragDropUploader: React.FC<object> = () => {
         }
 
         setUploading(true);
+        setUploadProgress(0);
+
         try {
             const result = await uploadFile(file, (progress) => {
                 setUploadProgress(progress);
             }) as UploadResponse;
 
             toast.success("File uploaded successfully!");
-            setFile(null);
-            setUploadProgress(0);
+            // setFile(null);
+            // setUploadProgress(0);
 
             // Navigate to the file details page if available, otherwise go to files list
             if (result.data && result.data.fileId) {

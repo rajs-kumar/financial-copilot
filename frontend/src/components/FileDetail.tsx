@@ -34,9 +34,12 @@ const FileDetail: React.FC<FileDetailProps> = ({ fileId }) => {
         setFileStatus(response.data || null);
       } else {
         setError(response.message || "Failed to fetch file status");
+        toast.error(response.message || "Failed to fetch file status");
       }
     } catch (err) {
-      setError("An error occurred while fetching file status");
+      const errorMessage = err instanceof Error ? err.message : "Unknown error";
+      setError(errorMessage);
+      toast.error(errorMessage);
       console.error(err);
     } finally {
       setLoading(false);

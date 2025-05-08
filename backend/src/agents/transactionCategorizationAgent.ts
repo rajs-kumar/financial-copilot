@@ -179,6 +179,13 @@ export class TransactionCategorizationAgent extends BaseAgent {
     reasoning?: string;
   }> {
     try {
+      // Log attempt
+      this.logEvent('llm_categorization_attempt', { 
+        transactionId: transaction.id,
+        description: transaction.description,
+        amount: transaction.amount
+      });
+      
       // Convert chart of accounts to a simplified format for the prompt
       const accountOptions = Object.entries(chartOfAccounts)
         .map(([code, account]) => ({
@@ -192,65 +199,92 @@ export class TransactionCategorizationAgent extends BaseAgent {
       
       // Create the prompt
       const prompt = `
-You are a financial categorization expert. Given the following transaction:
-- Date: ${transaction.date}
-- Description: ${transaction.description}
-- Amount: ${transaction.amount}
-- Type: ${transaction.type}
-
-Please categorize this transaction into the most appropriate account code from the chart of accounts below.
-Return a JSON response with the following structure:
-{
-  "accountCode": "string", // The code from the chart of accounts
-  "confidence": 0.0-1.0, // Your confidence in this categorization
-  "reasoning": "string" // Brief explanation of your reasoning
-}
-
-Chart of Accounts (excerpt):
-${JSON.stringify(accountOptions, null, 2)}
-`;
+  You are a financial categorization expert. Given the following transaction:
+  - Date: ${transaction.date}
+  - Description: ${transaction.description}
+  - Amount: ${transaction.amount}
+  - Type: ${transaction.type}
+  
+  Please categorize this transaction into the most appropriate account code from the chart of accounts below.
+  Return a JSON response with the following structure:
+  {
+    "accountCode": "string", // The code from the chart of accounts
+    "confidence": 0.0-1.0, // Your confidence in this categorization
+    "reasoning": "string" // Brief explanation of your reasoning
+  }
+  
+  Chart of Accounts (excerpt):
+  ${JSON.stringify(accountOptions, null, 2)}
+  `;
       
-      const llmRequest: LLMRequest = {
-        prompt,
-        temperature: 0.1, // Low temperature for more deterministic results
-        maxTokens: 500,
-        model: 'gpt-4' // Assuming this is the model we want to use
-      };
+      // Try up to 3 times with increasing temperature
+      let attempts = 0;
+      let maxAttempts = 3;
+      let lastError: any = null;
       
-      // Call LLM service
-      const llmResponse = await this.llmService.generateText(llmRequest);
-      
-      // Parse the response
-      let parsedResponse;
-      try {
-        // Extract JSON from the response (handle cases where there might be extra text)
-        const jsonMatch = llmResponse.text.match(/\{[\s\S]*\}/);
-        
-        if (jsonMatch) {
-          parsedResponse = JSON.parse(jsonMatch[0]);
-        } else {
-          throw new Error('Could not extract JSON from LLM response');
+      while (attempts < maxAttempts) {
+        try {
+          const temperature = 0.1 + (attempts * 0.2); // Increase randomness with each attempt
+          
+          const llmRequest: LLMRequest = {
+            prompt,
+            temperature,
+            maxTokens: 500,
+            model: 'gpt-4' // Assuming this is the model we want to use
+          };
+          
+          // Call LLM service
+          const llmResponse = await this.llmService.generateText(llmRequest);
+          
+          // Parse the response
+          // Extract JSON from the response (handle cases where there might be extra text)
+          const jsonMatch = llmResponse.text.match(/\{[\s\S]*\}/);
+          
+          if (jsonMatch) {
+            const parsedResponse = JSON.parse(jsonMatch[0]);
+            
+            // Validate the accountCode
+            if (!parsedResponse.accountCode || !chartOfAccounts[parsedResponse.accountCode]) {
+              attempts++;
+              lastError = new Error('Invalid account code in LLM response');
+              continue;
+            }
+            
+            // Log success
+            this.logEvent('llm_categorization_success', {
+              transactionId: transaction.id,
+              accountCode: parsedResponse.accountCode,
+              confidence: parsedResponse.confidence,
+              attempts: attempts + 1
+            });
+            
+            return {
+              accountCode: parsedResponse.accountCode,
+              confidence: Math.min(Math.max(parsedResponse.confidence, 0), 1), // Ensure between 0 and 1
+              reasoning: parsedResponse.reasoning
+            };
+          } else {
+            attempts++;
+            lastError = new Error('Could not extract JSON from LLM response');
+            continue;
+          }
+        } catch (error) {
+          attempts++;
+          lastError = error;
         }
-      } catch (error: unknown) {
-        if (error instanceof Error) {
-          throw new Error(`Failed to parse LLM response: ${error.message}`);
-        }
-        throw new Error(`Failed to parse LLM response: ${String(error)}`);
       }
       
-      // Validate the accountCode
-      if (!parsedResponse.accountCode || !chartOfAccounts[parsedResponse.accountCode]) {
-        return { accountCode: null, confidence: 0 };
-      }
+      // If we get here, all attempts failed
+      this.logEvent('llm_categorization_failed', { 
+        transactionId: transaction.id,
+        attempts: maxAttempts,
+        error: lastError?.message
+      });
       
-      return {
-        accountCode: parsedResponse.accountCode,
-        confidence: Math.min(Math.max(parsedResponse.confidence, 0), 1), // Ensure between 0 and 1
-        reasoning: parsedResponse.reasoning
-      };
+      return { accountCode: null, confidence: 0 };
     } catch (error) {
       this.logEvent('llm_categorization_error', { error: (error as Error).message });
-      return { accountCode: null, confidence: 0 };
+        return { accountCode: null, confidence: 0 };
+      }
     }
   }
-}

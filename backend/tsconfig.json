@@ -109,11 +109,13 @@
 
     /* Completeness */
     // "skipDefaultLibCheck": true,                      /* Skip type checking .d.ts files that are included with TypeScript. */
-    "skipLibCheck": true,                                 /* Skip type checking all .d.ts files. */
+    "skipLibCheck": true,                                /* Skip type checking all .d.ts files. */
     "outDir": "./dist",
     "rootDir": "./src",
     "resolveJsonModule": true,                           /* Include modules imported with .json extension */
-    "sourceMap": true,                                /* Include sourcemaps in the output */
+    "sourceMap": true,                                   /* Include sourcemaps in the output */
+    "types": ["jest", "node"],
+    "typeRoots": ["node_modules/@types"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules"]

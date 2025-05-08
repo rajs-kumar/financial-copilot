@@ -20,6 +20,7 @@ class MessageQueue {
   async connect(): Promise<void> {
     try {
       const url = process.env.RABBITMQ_URL || 'amqp://localhost';
+      console.log(`Connecting to RabbitMQ at ${url}...`);
       this.connection = await amqp.connect(url);
       
       if (!this.connection) {
@@ -139,11 +140,21 @@ class MessageQueue {
       }
       
       if (!this.isConnected || !this.channel) {
-        throw new Error('Not connected to RabbitMQ');
+        console.log('Waiting for RabbitMQ connection...');
+        await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait for 5 seconds
+        if (!this.isConnected || !this.channel) {
+          throw new Error('Not connected to RabbitMQ');
+        }
       }
       
       // Subscribe to agent-specific queue
       const queueName = `${this.queuePrefix}${agentType}`;
+      console.log(`Attempting to subscribe to queue: ${queueName}`);
+      console.log(`Connection status: ${this.isConnected}`);
+      
+      await this.channel.assertQueue(queueName, { durable: true });
+      console.log(`Subscribed to queue: ${queueName}`);
+
       await this.channel.consume(queueName, (msg: { content: { toString: () => string; }; }) => {
         if (msg) {
           try {
@@ -193,7 +204,9 @@ class MessageQueue {
 const messageQueue = new MessageQueue();
 
 export const setupMessageQueue = async (): Promise<void> => {
+  console.log('Setting up RabbitMQ connection...');
   await messageQueue.connect();
+  console.log('RabbitMQ setup complete.');
 };
 
 export const getMessageQueue = (): MessageQueue => {

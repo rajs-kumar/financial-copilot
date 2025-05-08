@@ -11,9 +11,15 @@ import transactionRoutes from './routes/transactionRoutes';
 import copilotChatRoutes from './routes/copilotChatRoutes';
 import { connectDatabase } from './config/database';
 import { setupMessageQueue } from './orchestration/messageQueue';
+import { DataIngestionAgent } from './agents/dataIngestionAgent';
+import { CopilotChatAgent } from './agents/copilotChatAgent';
+import { TransactionCategorizationAgent } from './agents/transactionCategorizationAgent';
+import { getAgentOrchestrator } from './orchestration/agentOrchestrator';
 import prisma from './services/db';
 import path from 'path';
 import fs from 'fs';
+import { LLMService } from './services/llmService';
+import { TransactionService } from './services/transactionService';
 
 // Load environment variables
 dotenv.config();
@@ -53,8 +59,20 @@ const startServer = async () => {
     await prisma.$connect();
     console.log('Connected to database via Prisma');
     
+    console.log('Setting up RabbitMQ...');
     await setupMessageQueue();
+    console.log('RabbitMQ setup complete. Registering agents...');
     
+    /* Register agents
+    const orchestrator = getAgentOrchestrator();
+    const llmService = new LLMService();
+    const transactionService = new TransactionService();
+    
+    orchestrator.registerAgent(new DataIngestionAgent());
+    orchestrator.registerAgent(new CopilotChatAgent(llmService, transactionService));
+    orchestrator.registerAgent(new TransactionCategorizationAgent(llmService));
+    */
+    // Start the server
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
