@@ -29,7 +29,10 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
   try {
     // Verify token
     const jwtSecret = process.env.JWT_SECRET || 'default_jwt_secret';
+    console.log(`Verifying token with secret: ${jwtSecret.substring(0, 5)}...`);
+
     const decoded = jwt.verify(token, jwtSecret) as any;
+    console.log(`Token decoded for user ID: ${decoded.userId}`);
     
     // Check if user exists in database
     const result = await query(
@@ -38,6 +41,7 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
     );
     
     if (result.rows.length === 0) {
+      console.log(`User ${decoded.userId} not found in database`);
       res.status(401).json({ success: false, message: 'Invalid user' });
       return;
     }
@@ -49,15 +53,18 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
       role: result.rows[0].role
     };
     
+    console.log(`Authentication successful for user ${req.user.id}`);
     next();
   } catch (error: unknown) {
     if (error instanceof jwt.JsonWebTokenError) {
+      console.error(`JWT error: ${error.name} - ${error.message}`);
       if (error.name === 'TokenExpiredError') {
         res.status(401).json({ success: false, message: 'Token expired' });
       } else {
         res.status(403).json({ success: false, message: 'Invalid token' });
       }
     } else {
+      console.error('Authentication error:', error);
       res.status(500).json({ success: false, message: 'Authentication error' });
     }
   }

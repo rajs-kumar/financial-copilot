@@ -81,6 +81,28 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setLoading(false);
   }, []);
 
+  // Add axios response interceptor to handle 401/403 errors
+  useEffect(() => {
+    const interceptor = axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        // Only handle auth errors when we have a token (are logged in)
+        if (token && error.response && (error.response.status === 401 || error.response.status === 403)) {
+          console.log('Authentication error detected, logging out');
+          // Don't logout here - just return the error
+          // We'll let the apiClient handle the redirection
+          return Promise.reject(error);
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    // Clean up interceptor when component unmounts
+    return () => {
+      axios.interceptors.response.eject(interceptor);
+    };
+  }, [token]);
+
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setLoading(true);

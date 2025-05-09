@@ -9,17 +9,21 @@ import authRoutes from './routes/authRoutes';
 import dataIngestionRoutes from './routes/dataIngestionRoutes';
 import transactionRoutes from './routes/transactionRoutes';
 import copilotChatRoutes from './routes/copilotChatRoutes';
-import { connectDatabase } from './config/database';
+import diagnosticRoutes from './routes/diagnosticRoutes';
+import healthCheckRoutes from './routes/healthCheckRoutes';
+import { connectDatabase, query } from './config/database';
 import { setupMessageQueue } from './orchestration/messageQueue';
+import { getAgentOrchestrator } from './orchestration/agentOrchestrator';
 import { DataIngestionAgent } from './agents/dataIngestionAgent';
 import { CopilotChatAgent } from './agents/copilotChatAgent';
 import { TransactionCategorizationAgent } from './agents/transactionCategorizationAgent';
-import { getAgentOrchestrator } from './orchestration/agentOrchestrator';
 import prisma from './services/db';
 import path from 'path';
 import fs from 'fs';
 import { LLMService } from './services/llmService';
 import { TransactionService } from './services/transactionService';
+
+
 
 // Load environment variables
 dotenv.config();
@@ -45,13 +49,46 @@ app.use('/api/auth', authRoutes);
 app.use('/api/data-ingestion', dataIngestionRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/copilot', copilotChatRoutes);
+app.use('/api/diagnostics', diagnosticRoutes);
+app.use('/api', healthCheckRoutes);
 
 // Error handling middleware
 app.use(errorHandler);
 
+const testDbConnection = async () => {
+  try {
+    // Simple query to test the connection
+    const result = await query('SELECT NOW() as now');
+    console.log('✅ PostgreSQL connection successful!');
+    console.log(`Server time: ${result.rows[0].now}`);
+    
+    // Test table access
+    const tablesResult = await query(`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public'
+    `);
+    console.log('Available tables:', tablesResult.rows.map((row: { table_name: any; }) => row.table_name).join(', '));
+    
+    return true;
+  } catch (error) {
+    console.error('❌ PostgreSQL connection failed:', error);
+    return false;
+  }
+};
+
 // Start server
 const startServer = async () => {
   try {
+    // Test database connection
+    console.log('Testing database connection...');
+    const dbConnected = await testDbConnection();
+    
+    if (!dbConnected) {
+      console.error('Could not connect to the database. Check your connection parameters.');
+      process.exit(1);
+    }
+
     // Connect to PostgreSQL
     await connectDatabase();
     

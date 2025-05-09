@@ -31,15 +31,21 @@ const FileList: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
+
+      console.log("Fetching files...");
       const response = await getUploadedFiles() as ApiResponse;
+      console.log("Files response:", response);
+
       if (response.success) {
-        setFiles(response.data);
+        setFiles(response.data || []);
       } else {
         setError(response.message || "Failed to fetch files");
+        toast.error(response.message || "Failed to fetch files");
       }
     } catch (err) {
       setError("An error occurred while fetching files");
       console.error(err);
+      toast.error("Could not load files. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -56,6 +62,7 @@ const FileList: React.FC = () => {
           (file) => file.status === "pending" || file.status === "processing"
         )
       ) {
+        console.log("Polling for file updates...");
         fetchFiles();
       }
     }, 5000); // Poll every 5 seconds

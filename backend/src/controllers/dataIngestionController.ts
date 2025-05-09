@@ -86,7 +86,9 @@ export class DataIngestionController {
         return;
       }
       
+      console.log(`Fetching files for user ${userId}`);
       const files = await this.dataIngestionService.getFilesByUser(userId);
+      console.log(`Found ${files.length} files`);
       
       res.status(200).json({
         success: true,

@@ -28,15 +28,20 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
-    // Handle authentication errors
-    if (error.response?.status === 401 || error.response?.status === 403) {
-      // If token expired or invalid, redirect to login
-      if (typeof window !== 'undefined') {
-        // Only clear token in browser environment
-        localStorage.removeItem("accessToken");
-        // Redirect to login page if we're in a browser context
+    // Only handle auth errors in the browser
+    if (typeof window !== 'undefined') {
+      // Handle authentication errors
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        console.log('Auth error in API client:', error.response.status);
+        
+        // Only redirect if we're not already on the login page
         if (window.location.pathname !== '/login') {
-          window.location.href = '/login';
+          // Remove the token as it's likely invalid
+          localStorage.removeItem("accessToken");
+          // Redirect to login page after a slight delay to avoid race conditions
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 100);
         }
       }
     }
